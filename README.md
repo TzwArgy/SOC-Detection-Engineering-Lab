@@ -16,8 +16,6 @@ The primary objective is to demonstrate hands-on competencies in:
 
 ## Architecture & Topology
 
-## Architecture & Topology
-
 ```mermaid
 flowchart TB
     subgraph Host["Host Workstation (Windows)"]
