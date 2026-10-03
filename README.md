@@ -61,7 +61,7 @@ flowchart TB
 | **Persistence** | [T1547.001](https://attack.mitre.org/techniques/T1547/001/) | Boot/Logon Autostart: Registry Run Keys | Sysmon Event ID 13 (Value Set) | **High (Level 10)** |
 | **Privilege Escalation** | [T1098](https://attack.mitre.org/techniques/T1098/) | Account Manipulation: Local Administrators Group | Windows Security Event ID 4732 | **Critical (Level 12)** |
 
-![MITRE ATT&CK Overview](evidence/00_mitre_attack_matrix.jpg)
+![MITRE ATT&CK Overview](evidence/00_mitre_attack_matrix.png)
 
 ---
 
@@ -100,22 +100,22 @@ flowchart TB
 ### 1. Alert Aggregation & Correlation
 The Wazuh Manager ingests real-time events, firing high-severity correlation rules against endpoint activities:
 
-![Wazuh Alert Summary](evidence/01_wazuh_attack_alerts_summary.jpg)
+![Wazuh Alert Summary](evidence/01_wazuh_attack_alerts_summary.png)
 
 ### 2. T1059.001 Deep Dive (Sysmon Event ID 1)
 Granular investigation into the process execution tree, revealing parent-child lineage, user context, and command arguments:
 
-![PowerShell Telemetry Triage](evidence/02_triage_powershell_telemetry_t1059.jpg)
+![PowerShell Telemetry Triage](evidence/02_triage_powershell_telemetry_t1059.png)
 
 ### 3. T1547.001 Deep Dive (Sysmon Event ID 13)
 Inspection of registry modification targeting auto-run persistence:
 
-![Registry Persistence Triage](evidence/03_triage_registry_persistence_t1547.jpg)
+![Registry Persistence Triage](evidence/03_triage_registry_persistence_t1547.png)
 
 ### 4. Attack Timeline & Incident Scope
 Complete event chronological sequence illustrating initial drops, persistence, and execution triggers:
 
-![Attack Timeline](evidence/04_soc_incident_attack_timeline.jpg)
+![Attack Timeline](evidence/04_soc_incident_attack_timeline.png)
 
 ---
 
