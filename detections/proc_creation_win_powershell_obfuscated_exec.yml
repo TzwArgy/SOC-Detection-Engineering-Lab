@@ -1,0 +1,29 @@
+title: Suspicious Encoded PowerShell Execution
+id: f4b1b369-2a91-4cf1-8c44-b0d8787f1234
+status: experimental
+description: Detects PowerShell execution with bypass flags and base64 encoded payload
+references:
+    - https://attack.mitre.org/techniques/T1059/001/
+author: Your Name (SOC Detection Lab)
+date: 2026/10/03
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_img:
+        Image|endswith:
+            - '\powershell.exe'
+            - '\pwsh.exe'
+    selection_cli:
+        CommandLine|contains:
+            - ' -enc '
+            - ' -EncodedCommand '
+            - ' -ep bypass '
+            - ' -ExecutionPolicy Bypass '
+    condition: selection_img and selection_cli
+falsepositives:
+    - Administrative maintenance scripts
+level: high
+tags:
+    - attack.execution
+    - attack.t1059.001

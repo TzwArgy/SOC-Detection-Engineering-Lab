@@ -1,0 +1,25 @@
+<!-- Custom Detection Engineering Rules - Wazuh v4.9.0 -->
+<group name="soc_custom_detections,windows,sysmon,">
+
+  <!-- Rule 100101: Suspicious PowerShell Execution (T1059.001) -->
+  <rule id="100101" level="12">
+    <if_sid>61603, 92057</if_sid>
+    <field name="win.eventdata.image" type="pcre2">(?i)powershell\.exe|pwsh\.exe</field>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)(-enc|-encodedcommand|bypass)</field>
+    <description>SOC Alert: Suspicious PowerShell Execution with Bypass or Encoded arguments [T1059.001]</description>
+    <mitre>
+      <id>T1059.001</id>
+    </mitre>
+  </rule>
+
+  <!-- Rule 100102: Persistence via Registry Run Key (T1547.001) -->
+  <rule id="100102" level="10">
+    <if_sid>61615, 92302</if_sid>
+    <field name="win.eventdata.targetObject" type="pcre2">(?i)CurrentVersion.*Run</field>
+    <description>SOC Alert: Persistence via Run Key Registry Modification [T1547.001]</description>
+    <mitre>
+      <id>T1547.001</id>
+    </mitre>
+  </rule>
+
+</group>

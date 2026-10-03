@@ -1,0 +1,23 @@
+title: Persistence via Windows Run Key
+id: a7c2d154-1b33-4cf2-9e85-d14f6b219012
+status: experimental
+description: Detects modifications to the Windows Registry Run key commonly used for persistence (T1547.001).
+references:
+    - https://attack.mitre.org/techniques/T1547/001/
+author: Lefta (Detection Engineering Lab)
+date: 2026/10/03
+logsource:
+    category: registry_set
+    product: windows
+detection:
+    selection:
+        TargetObject|contains:
+            - '\CurrentVersion\Run'
+            - '\CurrentVersion\RunOnce'
+    condition: selection
+falsepositives:
+    - Legitimate software installers
+level: high
+tags:
+    - attack.persistence
+    - attack.t1547.001
