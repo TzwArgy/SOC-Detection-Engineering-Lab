@@ -50,6 +50,7 @@ flowchart TB
     class Manager,Indexer,Dashboard wazuh;
     class Sysmon,WinLogs,Agent endpoint;
 ```
+
 ---
 
 ## MITRE ATT&CK Coverage Matrix
@@ -60,6 +61,8 @@ flowchart TB
 | **Persistence** | [T1547.001](https://attack.mitre.org/techniques/T1547/001/) | Boot/Logon Autostart: Registry Run Keys | Sysmon Event ID 13 (Value Set) | **High (Level 10)** |
 | **Privilege Escalation** | [T1098](https://attack.mitre.org/techniques/T1098/) | Account Manipulation: Local Administrators Group | Windows Security Event ID 4732 | **Critical (Level 12)** |
 
+![MITRE ATT&CK Overview](evidence/00_mitre_attack_matrix.jpg)
+
 ---
 
 ## Adversary Emulation & Detections
@@ -68,83 +71,96 @@ flowchart TB
 - **Emulated Command**:
   ```powershell
   powershell.exe -ExecutionPolicy Bypass -NoProfile -EncodedCommand SQBFAFgAIAAoACcAVABlAHMAdAAnACkA
+  ```
+- **Detection Logic**: Evaluates process creation events where `Image` matches PowerShell instances and `CommandLine` contains execution policy bypass flags combined with encoded execution switches (`-enc`, `-encodedcommand`).
+- **Telemetry Breakdown**:
+  - `ProcessId`, `ParentProcessId`, and `ParentImage` inspection.
+  - Base64 payload decoding (`IEX ('Test')`).
+  - SHA-256 process hashing for artifact validation.
 
+### 2. Registry Persistence via Run Key (T1547.001)
+- **Emulated Command**:
+  ```cmd
+  reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v "SOC_Malware_Test" /t REG_SZ /d "C:\Users\Public\svchost_fake.exe" /f
+  ```
+- **Detection Logic**: Monitors Sysmon Event 13 specifically targeted at registry keys under `\Software\Microsoft\Windows\CurrentVersion\Run*` establishing persistence outside normal software installations.
 
-Detection Logic: Evaluates process creation events where Image matches PowerShell instances and CommandLine contains execution policy bypass flags combined with encoded execution switches (-enc, -encodedcommand).
+### 3. Privilege Escalation via Local Group Addition (T1098)
+- **Emulated Command**:
+  ```cmd
+  net user rogue_admin TempPass123! /add
+  net localgroup Administrators rogue_admin /add
+  ```
+- **Detection Logic**: Monitors Windows Security Event ID 4732 for unauthorized user additions to the local Administrators group.
 
-Telemetry Breakdown:
+---
 
-ProcessId, ParentProcessId, and ParentImage inspection.
+## Telemetry Triage & Evidence
 
-Base64 payload decoding (IEX ('Test')).
+### 1. Alert Aggregation & Correlation
+The Wazuh Manager ingests real-time events, firing high-severity correlation rules against endpoint activities:
 
-SHA-256 process hashing for artifact validation.
+![Wazuh Alert Summary](evidence/01_wazuh_attack_alerts_summary.jpg)
 
-2. Registry Persistence via Run Key (T1547.001)
-Emulated Command:
+### 2. T1059.001 Deep Dive (Sysmon Event ID 1)
+Granular investigation into the process execution tree, revealing parent-child lineage, user context, and command arguments:
 
-DOS
-reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v "SOC_Malware_Test" /t REG_SZ /d "C:\Users\Public\svchost_fake.exe" /f
+![PowerShell Telemetry Triage](evidence/02_triage_powershell_telemetry_t1059.jpg)
 
-Detection Logic: Monitors Sysmon Event 13 specifically targeted at registry keys under \Software\Microsoft\Windows\CurrentVersion\Run* establishing persistence outside normal software installations.
-
-Telemetry Triage & Evidence
-
-1. Alert Aggregation & Correlation
-The Wazuh Manager ingests real-time events, firing high-severity correlation rules against the endpoint activity:
-
-2. T1059.001 Deep Dive (Sysmon Event ID 1)
-Granular investigation into the process execution tree, revealing parent-child lineage and command-line arguments:
-
-3. T1547.001 Deep Dive (Sysmon Event ID 13)
+### 3. T1547.001 Deep Dive (Sysmon Event ID 13)
 Inspection of registry modification targeting auto-run persistence:
 
-4. Attack Timeline & Incident Scope
-Complete event chronological sequence illustrating initial drop, persistence, and execution triggers:
+![Registry Persistence Triage](evidence/03_triage_registry_persistence_t1547.jpg)
 
-Repository Structure
+### 4. Attack Timeline & Incident Scope
+Complete event chronological sequence illustrating initial drops, persistence, and execution triggers:
+
+![Attack Timeline](evidence/04_soc_incident_attack_timeline.jpg)
+
+---
+
+## Repository Structure
+
+```text
 SOC-Detection-Lab/
-├── README.md  # Lab architecture and detection documentation
+├── README.md                                          # Lab architecture and detection documentation
 ├── detections/
 │   ├── proc_creation_win_powershell_obfuscated_exec.yml # Generic Sigma Rule (T1059.001)
 │   ├── registry_set_run_key_persistence.yml           # Generic Sigma Rule (T1547.001)
-│   └── wazuh_rules.xml   # Production Wazuh XML Detection Rules
+│   └── wazuh_rules.xml                               # Production Wazuh XML Detection Rules
 ├── playbooks/
-│   └── IR-Playbook-T1059.001.md # SOC Tier-1/Tier-2 Incident Response Playbook
+│   └── IR-Playbook-T1059.001.md                       # SOC Tier-1/Tier-2 Incident Response Playbook
 └── evidence/
-    ├── 01_wazuh_attack_alerts_summary.png # Overview of alert hits in Wazuh
-    ├── 02_triage_powershell_telemetry_t1059.png # Sysmon Event ID 1 field analysis
-    ├── 03_triage_registry_persistence_t1547.png # Sysmon Event ID 13 registry telemetry
-    └── 04_soc_incident_attack_timeline.png # Multi-stage attack progression
+    ├── 00_mitre_attack_matrix.jpg                     # Wazuh MITRE ATT&CK module visualization
+    ├── 01_wazuh_attack_alerts_summary.jpg             # Overview of alert hits in Wazuh
+    ├── 02_triage_powershell_telemetry_t1059.jpg       # Sysmon Event ID 1 field analysis
+    ├── 03_triage_registry_persistence_t1547.jpg       # Sysmon Event ID 13 registry telemetry
+    └── 04_soc_incident_attack_timeline.jpg           # Multi-stage attack progression timeline
+```
 
-How to Replicate
-Deploy SIEM Cluster:
+---
 
-Bash
-git clone [https://github.com/wazuh/wazuh-docker.git](https://github.com/wazuh/wazuh-docker.git) -b v4.9.0 --single-branch
-cd wazuh-docker/single-node
-docker compose up -d
-Provision Endpoint:
+## How to Replicate
 
-Install Windows 10/11 Pro on VirtualBox configured with a Bridged Network Adapter.
-
-Install Sysmon: Sysmon64.exe -accepteula -i sysmonconfig-export.xml.
-
-Install Wazuh Windows Agent and add the Sysmon channel to ossec.conf:
-
-XML
-<localfile>
-  <location>Microsoft-Windows-Sysmon/Operational</location>
-  <log_format>eventchannel</log_format>
-</localfile>
-Deploy Custom Detections:
-
-Import detections/wazuh_rules.xml into /var/ossec/etc/rules/local_rules.xml.
-
-Restart the Wazuh Manager: docker exec -it single-node-wazuh.manager-1 /var/ossec/bin/wazuh-control restart.
-
-Execute Adversary Actions & Validate:
-
-Run test commands on the VM.
-
-Inspect alerts in Wazuh Dashboard via Threat Hunting -> Events.
+1. **Deploy SIEM Cluster**:
+   ```bash
+   git clone [https://github.com/wazuh/wazuh-docker.git](https://github.com/wazuh/wazuh-docker.git) -b v4.9.0 --single-branch
+   cd wazuh-docker/single-node
+   docker compose up -d
+   ```
+2. **Provision Endpoint**:
+   - Install Windows 10/11 Pro on VirtualBox configured with a **Bridged Network Adapter**.
+   - Install Sysmon: `Sysmon64.exe -accepteula -i sysmonconfig-export.xml`.
+   - Install Wazuh Windows Agent and add the Sysmon channel to `ossec.conf`:
+     ```xml
+     <localfile>
+       <location>Microsoft-Windows-Sysmon/Operational</location>
+       <log_format>eventchannel</log_format>
+     </localfile>
+     ```
+3. **Deploy Custom Detections**:
+   - Import `detections/wazuh_rules.xml` into `/var/ossec/etc/rules/local_rules.xml`.
+   - Restart the Wazuh Manager: `docker exec -it single-node-wazuh.manager-1 /var/ossec/bin/wazuh-control restart`.
+4. **Execute Adversary Actions & Validate**:
+   - Run test commands on the VM.
+   - Inspect alerts in Wazuh Dashboard via **Threat Hunting -> Events**.
