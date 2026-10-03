@@ -22,4 +22,14 @@
     </mitre>
   </rule>
 
+  <!-- Rule 100103: Unauthorized Member Added to Local Administrators (T1098) -->
+  <rule id="100103" level="12">
+    <if_sid>60144</if_sid>
+    <field name="win.system.eventID">^4732$</field>
+    <description>SOC Alert: Unauthorized Member Added to Local Administrators Group [T1098]</description>
+    <mitre>
+      <id>T1098</id>
+    </mitre>
+  </rule>
+  
 </group>
