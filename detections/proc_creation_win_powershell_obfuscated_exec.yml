@@ -4,7 +4,7 @@ status: experimental
 description: Detects PowerShell execution with bypass flags and base64 encoded payload
 references:
     - https://attack.mitre.org/techniques/T1059/001/
-author: Your Name (SOC Detection Lab)
+author: Lefta (SOC Detection Lab)
 date: 2026/10/03
 logsource:
     category: process_creation
