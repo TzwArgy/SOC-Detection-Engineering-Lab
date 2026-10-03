@@ -16,31 +16,42 @@ The primary objective is to demonstrate hands-on competencies in:
 
 ## Architecture & Topology
 
-+--------------------------------------------------------------------------+
-|                        HOST WORKSTATION (Windows)                        |
-|                                                                          |
-|  +--------------------------------------------------------------------+  |
-|  |                 Wazuh Single-Node SIEM Stack                       |  |
-|  |   [ Wazuh Manager v4.9.0 ] <---> [ Wazuh Indexer (OpenSearch) ]    |  |
-|  |             ^                                 ^                    |  |
-|  |             |                                 |                    |  |
-|  |             +------------ [ Wazuh Dashboard ]-+                    |  |
-|  +-----------------------------------|--------------------------------+  |
-|                                      | TCP/1514 (Agent Registration/Logs)
-|                                      v                                   |
-|  +--------------------------------------------------------------------+  |
-|  |                 Victim Endpoint (VirtualBox VM)                    |  |
-|  |                 OS: Windows 10 Pro (x64)                           |  |
-|  |                 Network: Bridged Adapter (192.168.0.x)             |  |
-|  |                                                                    |  |
-|  |   +------------------------------------------------------------+   |  |
-|  |   | Telemetry Agents:                                          |   |  |
-|  |   |   - Microsoft Sysmon v15.22 (SwiftOnSecurity Config)       |   |  |
-|  |   |   - Wazuh Agent v4.9.0 (Active Windows EventChannel)      |   |  |
-|  |   +------------------------------------------------------------+   |  |
-|  +--------------------------------------------------------------------+  |
-+--------------------------------------------------------------------------+
+## Architecture & Topology
 
+```mermaid
+flowchart TB
+    subgraph Host["Host Workstation (Windows)"]
+        subgraph DockerStack["Wazuh SIEM Cluster (Docker v4.9.0)"]
+            Manager["Wazuh Manager<br/>(Detection & Analysis Engine)"]
+            Indexer["Wazuh Indexer<br/>(OpenSearch Storage)"]
+            Dashboard["Wazuh Dashboard<br/>(Threat Hunting UI)"]
+            
+            Manager <--> Indexer
+            Indexer <--> Dashboard
+        end
+    end
+
+    subgraph VM["Victim Endpoint (VirtualBox VM)"]
+        Sysmon["Microsoft Sysmon v15.22<br/>(SwiftOnSecurity Config)"]
+        WinLogs["Windows Security Events<br/>(Auditing Policies)"]
+        Agent["Wazuh Agent v4.9.0<br/>(Active EventChannel)"]
+
+        Sysmon -->|Event ID 1 & 13| Agent
+        WinLogs -->|Event ID 4732| Agent
+    end
+
+    Agent ==>|Encrypted Telemetry / TCP 1514| Manager
+
+    classDef host fill:#1e293b,stroke:#38bdf8,stroke-width:2px,color:#f8fafc;
+    classDef vm fill:#1e293b,stroke:#f59e0b,stroke-width:2px,color:#f8fafc;
+    classDef wazuh fill:#0f172a,stroke:#3b82f6,stroke-width:1px,color:#e2e8f0;
+    classDef endpoint fill:#0f172a,stroke:#64748b,stroke-width:1px,color:#e2e8f0;
+
+    class Host host;
+    class VM vm;
+    class Manager,Indexer,Dashboard wazuh;
+    class Sysmon,WinLogs,Agent endpoint;
+```
 ---
 
 ## MITRE ATT&CK Coverage Matrix
